@@ -133,33 +133,91 @@ function sortGallery(){
 
 
 
-//Search function using regex.
-function search(input, array){
-    let regex = new RegExp(input, "i");//i for case insensitive.
-    let filteredArray = array.filter((item) => {
-        return item.name.match(regex);
-    });
-    return filteredArray;
+//Search using regex.
+function search(input, array, threshold){
+    //First attempt to search with a typo tolerance of 0.
+    if (threshold == 0){
+      return array.filter(item => item.name.toLowerCase() === input.toLowerCase());
+    } else {
+     //First attempt unsuccesfull, function was called again with a typo tolerance of 3 to search for closest matches.
+        return array.filter(item => {
+            let itemName = item.name.toLowerCase();
+            let index = itemName.indexOf(input.toLowerCase());
+            return index !== -1 && levenshtein(input, itemName.substring(index, index + input.length)) <= threshold;
+        });
+    }
 }
 
-//Function to display filtered gallery according to input and result of binary search function.
-    function filterGallery(){
-        let input = document.getElementById("myinput").value;
-        let searchResultsArray = search(input, galleryArray);
-        if(this.value == ""){//this.value is the value of the input. If the input is empty, we display the gallery.
-            displayGallery(galleryArray);
-            document.getElementById("para").style.display = "none";
+function handleArrayResults(array, input){
+    //If the array is empty, we search for similar search results.
+    console.log("In handleArrayResults")
+    if(array == ""){
+        let similarSearchResultsArray = search(input, galleryArray, 3);
+        //If this is also empty, we display a message saying that no results were found.
+        if (similarSearchResultsArray == ""){
+            console.log("In handleArrayResults, we have no similar search results")
+            //There should be nothing displayed in the gallery except the message.
+            document.getElementById("search-suggestion").style.display = "none";
             document.getElementById("para2").style.display = "none";
+            document.getElementById("para").style.display = "block";
+            displayGallery(similarSearchResultsArray);
+
+        } else {
+            console.log("In handleArrayResults, we have similar search results")
+            //If we have similar search results, we display them.
+            document.getElementById("para").style.display = "block";
+            document.getElementById("para2").style.display = "none";
+            document.getElementById("search-suggestion").style.display = "block";
+            displayGallery(similarSearchResultsArray);
         }
-        else{
-            if(searchResultsArray == ""){ //If the filtered array is empty, we display a "not found" message.
-                document.getElementById("para").style.display = "block";
-                document.getElementById("card").innerHTML = "";//We clear the gallery by setting the innerHTML to an empty string. The array is not empty, but the visual representation is.
-            }
-            else{ //If the filtered array is not empty, we display the filtered gallery.
-                displayGallery(searchResultsArray);
-                document.getElementById("para").style.display = "none";
-                document.getElementById("para2").style.display = "block";
+    } else {//If the first search was succesfull, we display the results.
+        document.getElementById("para").style.display = "none";
+        document.getElementById("para2").style.display = "block";
+        document.getElementById("search-suggestion").style.display = "none";
+        displayGallery(array);
+    }
+}
+
+
+//Display filtered gallery according to input and result of binary search function.
+function filterGallery(){
+    let input = document.getElementById("myinput").value;
+    if(this.value == ""){//If the input is empty, we display the default gallery.
+        displayGallery(galleryArray);
+        document.getElementById("para").style.display = "none";
+        document.getElementById("para2").style.display = "none";
+        document.getElementById("search-suggestion").style.display = "none";
+    } else {
+    let searchResultsArray = search(input, galleryArray, 0);
+    handleArrayResults(searchResultsArray, input);
+    }
+}
+
+
+           
+            
+//Calculate the distance between two strings.
+function levenshtein(a, b){
+    if(a.length == 0) return b.length;
+    if(b.length == 0) return a.length;
+    let matrix = [];
+    let i;
+    for(i = 0; i <= b.length; i++){
+        matrix[i] = [i];
+    }
+    let j;
+    for(j = 0; j <= a.length; j++){
+        matrix[0][j] = j;
+    }
+    for(i = 1; i <= b.length; i++){
+        for(j = 1; j <= a.length; j++){
+            if(b.charAt(i-1) == a.charAt(j-1)){
+                matrix[i][j] = matrix[i-1][j-1];
+            } else {
+                matrix[i][j] = Math.min(matrix[i-1][j-1] + 1, Math.min(matrix[i][j-1] + 1, matrix[i-1][j] + 1));
             }
         }
     }
+    console.log("The distance between " + a + " and " + b + " is " + matrix[b.length][a.length] + ".");
+    return matrix[b.length][a.length];
+}
