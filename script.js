@@ -133,34 +133,31 @@ function sortGallery(){
 
 //Filtering the gallery according to the value of the input.
 function search(name, items){
-    var results = [];
-  name = name.toLowerCase();
-  //Going through the array of objects.
-  items.forEach(function(item) {
-    var itemName = item.name.toLowerCase();
-    var levenshtein = levenshteinDistance(name, itemName);
-    //Checking levenstein distance to decide whether we should push or not.
-    if (levenshtein <= Math.max(name.length, itemName.length) * 0.3) {
-      results.push(item);
-    }
-    //Also check if the item includes the search term.
-    if (itemName.includes(name)){
-        results.push(item);
-    }
-    //Also check if the word in which item includes the search term is within a distance of 2.
-    var words = itemName.split(" ");
-    words.forEach(function(word){
-        var levenshtein = levenshteinDistance(name, word);
-        if (levenshtein <= 2){
-            results.push(item);
+    var results = new Set();
+    name = name.toLowerCase();
+    items.forEach(function(item) {
+        var itemName = item.name.toLowerCase();
+        var levenshtein = levenshteinDistance(name, itemName);
+        //Match the whole name withing 30% of the length of the name.
+        if (levenshtein <= Math.max(name.length, itemName.length) * 0.3) {
+            results.add(item);
+        }
+        //Return the item if the name is included in the item name.
+        if (itemName.includes(name)) {
+            results.add(item);
+        }
+        //Return the item if the name is included in the item name WITHIN 2 LEVENSHTEIN DISTANCE.
+        if (results.size == 0) {
+            var words = itemName.split(" ");
+            words.forEach(function(word) {
+                var levenshtein = levenshteinDistance(name, word);
+                if (levenshtein <= 2) {
+                    results.add(item);
+                }
+            });
         }
     });
-    });
-    //Removing duplicates.
-    results = results.filter((item, index) => {
-        return results.indexOf(item) === index;
-    });
-    return results;
+    return Array.from(results);
 }
 
 function handleArrayResults(array, input){
