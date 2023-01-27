@@ -131,28 +131,43 @@ function sortGallery(){
     }
 }
 
-
-
-//Search using regex.
-function search(input, array, threshold){
-    //First attempt to search with a typo tolerance of 0.
-    if (threshold == 0){
-      return array.filter(item => item.name.toLowerCase() === input.toLowerCase());
-    } else {
-     //First attempt unsuccesfull, function was called again with a typo tolerance of 3 to search for closest matches.
-        return array.filter(item => {
-            let itemName = item.name.toLowerCase();
-            let index = itemName.indexOf(input.toLowerCase());
-            return index !== -1 && levenshtein(input, itemName.substring(index, index + input.length)) <= threshold;
-        });
+//Filtering the gallery according to the value of the input.
+function search(name, items){
+    var results = [];
+  name = name.toLowerCase();
+  //Going through the array of objects.
+  items.forEach(function(item) {
+    var itemName = item.name.toLowerCase();
+    var levenshtein = levenshteinDistance(name, itemName);
+    //Checking levenstein distance to decide whether we should push or not.
+    if (levenshtein <= Math.max(name.length, itemName.length) * 0.3) {
+      results.push(item);
     }
+    //Also check if the item includes the search term.
+    if (itemName.includes(name)){
+        results.push(item);
+    }
+    //Also check if the word in which item includes the search term is within a distance of 2.
+    var words = itemName.split(" ");
+    words.forEach(function(word){
+        var levenshtein = levenshteinDistance(name, word);
+        if (levenshtein <= 2){
+            results.push(item);
+        }
+    });
+    });
+    //Removing duplicates.
+    results = results.filter((item, index) => {
+        return results.indexOf(item) === index;
+    });
+    return results;
 }
 
 function handleArrayResults(array, input){
     //If the array is empty, we search for similar search results.
     console.log("In handleArrayResults")
-    if(array == ""){
-        let similarSearchResultsArray = search(input, galleryArray, 3);
+    if(array.length == 0){
+        let similarSearchResultsArray = search(input, galleryArray);
         //If this is also empty, we display a message saying that no results were found.
         if (similarSearchResultsArray == ""){
             console.log("In handleArrayResults, we have no similar search results")
@@ -165,7 +180,7 @@ function handleArrayResults(array, input){
         } else {
             console.log("In handleArrayResults, we have similar search results")
             //If we have similar search results, we display them.
-            document.getElementById("para").style.display = "block";
+            // document.getElementById("para").style.display = "block";
             document.getElementById("para2").style.display = "none";
             document.getElementById("search-suggestion").style.display = "block";
             displayGallery(similarSearchResultsArray);
@@ -188,36 +203,36 @@ function filterGallery(){
         document.getElementById("para2").style.display = "none";
         document.getElementById("search-suggestion").style.display = "none";
     } else {
-    let searchResultsArray = search(input, galleryArray, 0);
+    let searchResultsArray = search(input, galleryArray);
     handleArrayResults(searchResultsArray, input);
     }
 }
 
 
-           
-            
-//Calculate the distance between two strings.
-function levenshtein(a, b){
-    if(a.length == 0) return b.length;
-    if(b.length == 0) return a.length;
-    let matrix = [];
-    let i;
-    for(i = 0; i <= b.length; i++){
-        matrix[i] = [i];
+function levenshteinDistance(string1, string2) {
+    let distanceMatrix = [];
+
+    for (let i = 0; i <= string1.length; i++) {
+        distanceMatrix[i] = [i];
     }
-    let j;
-    for(j = 0; j <= a.length; j++){
-        matrix[0][j] = j;
+
+    for (let j = 0; j <= string2.length; j++) {
+        distanceMatrix[0][j] = j;
     }
-    for(i = 1; i <= b.length; i++){
-        for(j = 1; j <= a.length; j++){
-            if(b.charAt(i-1) == a.charAt(j-1)){
-                matrix[i][j] = matrix[i-1][j-1];
+
+    for (let i = 1; i <= string1.length; i++) {
+        for (let j = 1; j <= string2.length; j++) {
+            if (string1[i - 1] === string2[j - 1]) {
+                distanceMatrix[i][j] = distanceMatrix[i - 1][j - 1];
             } else {
-                matrix[i][j] = Math.min(matrix[i-1][j-1] + 1, Math.min(matrix[i][j-1] + 1, matrix[i-1][j] + 1));
+                distanceMatrix[i][j] = Math.min(
+                    distanceMatrix[i - 1][j - 1] + 1,
+                    distanceMatrix[i][j - 1] + 1,
+                    distanceMatrix[i - 1][j] + 1
+                );
             }
         }
     }
-    console.log("The distance between " + a + " and " + b + " is " + matrix[b.length][a.length] + ".");
-    return matrix[b.length][a.length];
+
+    return distanceMatrix[string1.length][string2.length];
 }
