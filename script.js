@@ -138,7 +138,7 @@ function search(name, items){
     items.forEach(function(item) {
         var itemName = item.name.toLowerCase();
         var levenshtein = levenshteinDistance(name, itemName);
-        //Match the whole name withing 30% of the length of the name.
+        //Match the whole name within 30% of the length of the name.
         if (levenshtein <= Math.max(name.length, itemName.length) * 0.3) {
             results.add(item);
         }
@@ -146,16 +146,14 @@ function search(name, items){
         if (itemName.includes(name)) {
             results.add(item);
         }
-        //Return the item if the name is included in the item name WITHIN 2 LEVENSHTEIN DISTANCE.
-        if (results.size == 0) {
-            var words = itemName.split(" ");
-            words.forEach(function(word) {
-                var levenshtein = levenshteinDistance(name, word);
-                if (levenshtein <= 2) {
-                    results.add(item);
-                }
-            });
-        }
+        //Return the item if the name is included in the item name within 30% of the length of the name.
+        var words = itemName.split(" ");
+        words.forEach(function(word) {
+            var levenshtein = levenshteinDistance(name, word);
+            if (levenshtein <= Math.max(name.length, word.length) * 0.3) {
+                results.add(item);
+            }
+        });
     });
     return Array.from(results);
 }
@@ -177,7 +175,6 @@ function handleArrayResults(array, input){
         } else {
             console.log("In handleArrayResults, we have similar search results")
             //If we have similar search results, we display them.
-            // document.getElementById("para").style.display = "block";
             document.getElementById("para2").style.display = "none";
             document.getElementById("search-suggestion").style.display = "block";
             displayGallery(similarSearchResultsArray);
