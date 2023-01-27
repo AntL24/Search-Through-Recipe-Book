@@ -68,9 +68,11 @@ displayGallery(galleryArray);
 
 //Displaying the gallery
 function displayGallery(defaultArray){
-    //We display the gallery.
-    document.getElementById("card").innerText = "";
+
+    document.getElementById("card").innerText = "";//Clearing the gallery before displaying the new gallery.
+
     for(let i=0; i<defaultArray.length; i++){
+
         document.getElementById("card").innerHTML += `
             <div class="col-md-4 mt-3">
                 <div class="card" p-3 ps-5 pe-5>
@@ -84,9 +86,11 @@ function displayGallery(defaultArray){
                 </div>
             </div>
         `;
+
     }
 }
-//Filtering the gallery according to the value of the input.
+
+//Filtering the gallery according to the user's actions.
 document.getElementById("myinput").addEventListener("input", filterGallery);
 document.getElementById("myselect").addEventListener("change", sortGallery);
 
@@ -138,15 +142,15 @@ function search(name, items){
     items.forEach(function(item) {
         var itemName = item.name.toLowerCase();
         var levenshtein = levenshteinDistance(name, itemName);
-        //Match the whole name within 30% of the length of the name.
+        //Match the whole name within a 30% error margin.
         if (levenshtein <= Math.max(name.length, itemName.length) * 0.3) {
             results.add(item);
         }
-        //Return the item if the name is included in the item name.
+        //Return the item if the name is included in the exact item name.
         if (itemName.includes(name)) {
             results.add(item);
         }
-        //Return the item if the name is included in the item name within 30% of the length of the name.
+        //Return the item if the name is included in one of the words of the item name withing a 30% error margin.
         var words = itemName.split(" ");
         words.forEach(function(word) {
             var levenshtein = levenshteinDistance(name, word);
@@ -158,51 +162,36 @@ function search(name, items){
     return Array.from(results);
 }
 
-function handleArrayResults(array, input){
-    //If the array is empty, we search for similar search results.
-    console.log("In handleArrayResults")
+//Display gallery according to the result of the search function.
+function handleArrayResults(array){
     if(array.length == 0){
-        let similarSearchResultsArray = search(input, galleryArray);
-        //If this is also empty, we display a message saying that no results were found.
-        if (similarSearchResultsArray == ""){
-            console.log("In handleArrayResults, we have no similar search results")
             //There should be nothing displayed in the gallery except the message.
             document.getElementById("search-suggestion").style.display = "none";
-            document.getElementById("para2").style.display = "none";
             document.getElementById("para").style.display = "block";
-            displayGallery(similarSearchResultsArray);
+            displayGallery(array);
 
         } else {
-            console.log("In handleArrayResults, we have similar search results")
-            //If we have similar search results, we display them.
-            document.getElementById("para2").style.display = "none";
+            document.getElementById("para").style.display = "none";
             document.getElementById("search-suggestion").style.display = "block";
-            displayGallery(similarSearchResultsArray);
-        }
-    } else {//If the first search was succesfull, we display the results.
-        document.getElementById("para").style.display = "none";
-        document.getElementById("para2").style.display = "block";
-        document.getElementById("search-suggestion").style.display = "none";
-        displayGallery(array);
+            displayGallery(array);
     }
 }
 
 
-//Display filtered gallery according to input and result of binary search function.
+//Call search or display function according to the value of the input.
 function filterGallery(){
     let input = document.getElementById("myinput").value;
     if(this.value == ""){//If the input is empty, we display the default gallery.
         displayGallery(galleryArray);
         document.getElementById("para").style.display = "none";
-        document.getElementById("para2").style.display = "none";
         document.getElementById("search-suggestion").style.display = "none";
     } else {
     let searchResultsArray = search(input, galleryArray);
-    handleArrayResults(searchResultsArray, input);
+    handleArrayResults(searchResultsArray);
     }
 }
 
-
+//Levenshtein distance algorithm.
 function levenshteinDistance(string1, string2) {
     let distanceMatrix = [];
 
